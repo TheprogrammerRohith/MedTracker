@@ -25,7 +25,7 @@ export default function Header() {
             <TouchableOpacity
             onPress={() => router.push('/add-new-medication')}
             >
-              <Ionicons name="medkit-outline" size={32} color="black" style={{marginLeft:30}}/>
+              <Ionicons name="medkit-outline" size={32} color="black" style={{marginLeft:50}}/>
               
             </TouchableOpacity>
             

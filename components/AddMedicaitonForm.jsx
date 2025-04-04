@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,19 +12,37 @@ import {
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { account, databases, medicines_collection_id, database_id } from "../app/appwrite";
+import { ID } from "react-native-appwrite";
 
 export default function AddMedicationScreen() {
-  const [selected, setSelected] = useState(null);
+  const router = useRouter();
+  const [userId, setUserId] = useState("");
+  const [diseaseName, setDiseaseName] = useState("");
+  const [medicineName, setMedicineName] = useState("");
+  const [selectedMedicineType, setSelectedMedicineType] = useState(null);
+  const [medicineDosage, setMedicineDosage] = useState("");
   const [selectedTimes, setSelectedTimes] = useState({
     morning: false,
     afternoon: false,
     night: false,
   });
-
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await account.get();
+        setUserId(user.$id);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const medicineOptions = [
     { id: "1", name: "Tablet" },
@@ -55,125 +73,154 @@ export default function AddMedicationScreen() {
     setShowEndPicker(false);
   };
 
-  const handleSubmit = () => {
-    Alert.alert("Medication Added Successfully", "", [
-      { text: "OK", onPress: () => router.push('(tabs)') },
-    ]);
-  }
+  const handleSubmit = async () => {
+    const timings = Object.keys(selectedTimes).filter((key) => selectedTimes[key]);
+  
+    if (!diseaseName || !medicineName || !selectedMedicineType || !medicineDosage) {
+      Alert.alert("Error", "Please fill in all fields.");
+      return;
+    }
+    
+    const data = {
+      userId,
+      disease_name: diseaseName,
+      medicine_name: medicineName,
+      medicine_type: selectedMedicineType,
+      medicine_dosage: medicineDosage,
+      timings,
+      start_date: startDate.toISOString().split("T")[0],
+      end_date: endDate.toISOString().split("T")[0],
+    }
 
-  const router = useRouter();
+    try {
+      await databases.createDocument(
+        database_id,
+        medicines_collection_id,
+        ID.unique(),
+        data
+      );
+  
+      Alert.alert("Success", "Medication Added Successfully", [
+        {
+          text: "OK",
+          onPress: () => router.push("(tabs)"),
+        },
+      ]);
+    } catch (error) {
+      console.error("Error saving data:", error);
+      Alert.alert("Error", "Failed to add medication.");
+    }
+  };
+  
 
   return (
-      <View style={{ marginTop: 10 }}>
-        <Text style={styles.header}>Add New Medication</Text>
+    <View style={{ marginTop: 10 }}>
+      <Text style={styles.header}>Add New Medication</Text>
 
-        <Text style={styles.label}>Disease You are sufferring from:</Text>
-        <TextInput style={styles.textInput} placeholder="ex: fever or headache" />
+      <Text style={styles.label}>Disease You are suffering from:</Text>
+      <TextInput
+        style={styles.textInput}
+        placeholder="e.g., Fever or Headache"
+        value={diseaseName}
+        onChangeText={setDiseaseName}
+      />
 
-        <Text style={styles.label}>Medicine Name</Text>
-        <TextInput style={styles.textInput} placeholder="Name" />
+      <Text style={styles.label}>Medicine Name</Text>
+      <TextInput
+        style={styles.textInput}
+        placeholder="Name"
+        value={medicineName}
+        onChangeText={setMedicineName}
+      />
 
-        <Text style={styles.label}>Type</Text>
-        <View style={{ marginTop: 5 }}>
-          <FlatList
-            data={medicineOptions}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContainer}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.item,
-                  selected === item.id && styles.selectedItem,
-                ]}
-                onPress={() => setSelected(item.id)}
-              >
-                <Text
-                  style={[
-                    styles.itemText,
-                    selected === item.id && styles.selectedText,
-                  ]}
-                >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-
-        <Text style={styles.label}>Dosage</Text>
-        <TextInput style={styles.textInput} placeholder="Ex: 2 drops or 15ml" />
-
-        <Text style={styles.label}>Select Timings</Text>
-        <View style={styles.checkboxRow}>
-          {["morning", "afternoon", "night"].map((time) => (
+      <Text style={styles.label}>Type</Text>
+      <View style={{ marginTop: 5 }}>
+        <FlatList
+          data={medicineOptions}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={time}
-              style={styles.checkboxContainer}
-              onPress={() => toggleCheckbox(time)}
+              style={[
+                styles.item,
+                selectedMedicineType === item.name && styles.selectedItem,
+              ]}
+              onPress={() => setSelectedMedicineType(item.name)} // Fixed: setting correct variable
             >
-              <MaterialIcons
-                name={
-                  selectedTimes[time] ? "check-box" : "check-box-outline-blank"
-                }
-                size={24}
-                color={selectedTimes[time] ? "#00B5E2" : "#555"}
-              />
-              <Text style={styles.checkboxLabel}>
-                {time.charAt(0).toUpperCase() + time.slice(1)}
+              <Text
+                style={[
+                  styles.itemText,
+                  selectedMedicineType === item.name && styles.selectedText,
+                ]}
+              >
+                {item.name}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.container}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Start Date</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowStartPicker(true)}
-            >
-              <Text style={styles.dateText}>{startDate.toLocaleDateString()}</Text>
-            </TouchableOpacity>
-            {showStartPicker && (
-              <RNDateTimePicker
-                minimumDate={new Date()}
-                onChange={onChangeStart}
-                value={startDate}
-              />
-            )}
-          </View>
-
-          <View style={styles.row}>
-            <Text style={styles.label}>End Date</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowEndPicker(true)}
-            >
-              <Text style={styles.dateText}>{endDate.toLocaleDateString()}</Text>
-            </TouchableOpacity>
-            {showEndPicker && (
-              <RNDateTimePicker
-                minimumDate={new Date()}
-                onChange={onChangeEnd}
-                value={endDate}
-              />
-            )}
-          </View>
-        </View>
-        <TouchableOpacity style={styles.button}
-              onPress={handleSubmit}>
-                <Text style={{
-                    fontSize:18,
-                    textAlign:'center',
-                    padding:15,
-                    color:'white'
-                }}>Submit</Text>
-            </TouchableOpacity>
+          )}
+        />
       </View>
+
+      <Text style={styles.label}>Dosage</Text>
+      <TextInput
+        style={styles.textInput}
+        placeholder="e.g., 2 drops or 15ml"
+        value={medicineDosage}
+        onChangeText={setMedicineDosage}
+      />
+
+      <Text style={styles.label}>Select Timings</Text>
+      <View style={styles.checkboxRow}>
+        {["morning", "afternoon", "night"].map((time) => (
+          <TouchableOpacity
+            key={time}
+            style={styles.checkboxContainer}
+            onPress={() => toggleCheckbox(time)}
+          >
+            <MaterialIcons
+              name={selectedTimes[time] ? "check-box" : "check-box-outline-blank"}
+              size={24}
+              color={selectedTimes[time] ? "#00B5E2" : "#555"}
+            />
+            <Text style={styles.checkboxLabel}>
+              {time.charAt(0).toUpperCase() + time.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.container}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Start Date</Text>
+          <TouchableOpacity style={styles.dateButton} onPress={() => setShowStartPicker(true)}>
+            <Text style={styles.dateText}>{startDate.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+          {showStartPicker && (
+            <RNDateTimePicker minimumDate={new Date()} onChange={onChangeStart} value={startDate} />
+          )}
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>End Date</Text>
+          <TouchableOpacity style={styles.dateButton} onPress={() => setShowEndPicker(true)}>
+            <Text style={styles.dateText}>{endDate.toLocaleDateString()}</Text>
+          </TouchableOpacity>
+          {showEndPicker && (
+            <RNDateTimePicker minimumDate={new Date()} onChange={onChangeEnd} value={endDate} />
+          )}
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={{ fontSize: 18, textAlign: "center", padding: 15, color: "white" }}>
+          Submit
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   header: {

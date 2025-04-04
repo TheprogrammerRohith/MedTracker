@@ -29,7 +29,7 @@ export default function DaySelector({ weekDays, selectedDay, setSelectedDay }) {
 const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 10,
-  },
+  },     
   dayItem: {
     width: 70,
     height: 50,

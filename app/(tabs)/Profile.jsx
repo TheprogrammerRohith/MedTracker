@@ -1,9 +1,48 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import { StyleSheet, Text, View, Image, TouchableOpacity, Alert } from "react-native";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
+import { account, databases, database_id, users_collection_id } from "../appwrite";
+import { Query } from "react-native-appwrite";
 
 export default function Profile() {
   const router = useRouter();
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        // Fetch logged-in user session
+        const userSession = await account.get();
+        const userId = userSession.$id; // Get userId
+
+        // Query Appwrite database to get user details
+        const response = await databases.listDocuments(database_id, users_collection_id, [
+          Query.equal("userId", userId)
+        ]);
+
+        if (response.documents.length > 0) {
+          setUserData(response.documents[0]); // Store user data
+        } else {
+          Alert.alert("Error", "User data not found.");
+        }
+      } catch (error) {
+        Alert.alert("Error", error.message);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await account.deleteSession("current"); // Logs out the user
+      Alert.alert("Logged Out", "You have been successfully logged out.");
+      router.replace("login/signIn"); // Navigate to login page
+    } catch (error) {
+      Alert.alert("Logout Failed", error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Profile Section */}
@@ -12,8 +51,8 @@ export default function Profile() {
           source={require("../../assets/images/profile.png")}
           style={styles.profileImage}
         />
-        <Text style={styles.userName}>John Doe</Text>
-        <Text style={styles.userEmail}>johndoe@example.com</Text>
+        <Text style={styles.userName}>{userData ? userData.name : "Loading..."}</Text>
+        <Text style={styles.userEmail}>{userData ? userData.username : "Loading..."}</Text>
       </View>
 
       {/* Menu Options */}
@@ -30,7 +69,7 @@ export default function Profile() {
           <Text style={styles.menuText}>Settings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.menuItem, styles.logoutButton]} onPress={() => router.push('login/signIn')}>
+        <TouchableOpacity style={[styles.menuItem, styles.logoutButton]} onPress={handleLogout}>
           <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
         </TouchableOpacity>
       </View>
