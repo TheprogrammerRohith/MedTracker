@@ -51,7 +51,17 @@ export default function MedicationList() {
   const currentDayIndex = new Date().getDay();
   const [selectedDay, setSelectedDay] = useState(weekDays[currentDayIndex].id);
 
-  const filteredMedicines = medicines.filter((medicine) => medicine.days.includes(selectedDay));
+  const filteredMedicines = medicines.filter((medicine) => {
+    const today = new Date();
+    const start = parseDate(medicine.startDate);
+    const end = parseDate(medicine.endDate);
+  
+    const isInDateRange = today >= start && today <= end;
+    const isCorrectDay = medicine.days.includes(selectedDay);
+  
+    return isInDateRange && isCorrectDay;
+  });
+  
 
   return (
     <ScrollView style={{ flex: 1 }}>
