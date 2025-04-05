@@ -1,24 +1,18 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, FlatList } from "react-native";
 
-export default function MedicineList({ Medicines }) {
+export default function MedicineList({ Medicines,loading }) {
   return (
     <FlatList
       style={{flex:1,width:"100%",marginTop:-400}}
       contentContainerStyle={{paddingBottom: 80 }}
       data={Medicines}
       keyExtractor={(item) => item.id}
-      onLayout={(event) => {
-        const {x, y, width, height} = event.nativeEvent.layout;
-        console.log('Debug element layout:', event.nativeEvent.layout);
-        console.log('FlatList layout:', {x, y, width, height});
-      }}
       ListEmptyComponent={
         <Text style={styles.noMedsText}>No medicines for this day</Text>
       }
       renderItem={({ item }) => {
         const { timeText, timeImage } = getTimeDetails(item.timings);
-
         return (
           <View style={styles.card}>
             <View style={styles.rowContainer}>
@@ -72,7 +66,6 @@ export default function MedicineList({ Medicines }) {
       }}
     />
   )
-    
 }
 
 // Function to determine the time text and image based on the current time

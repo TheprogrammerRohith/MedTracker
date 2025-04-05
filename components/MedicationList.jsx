@@ -96,7 +96,6 @@ export default function MedicationList() {
           days: [], // fallback to empty array to avoid crashing
         };
       });
-      console.log(cleanedMeds)
       setMedicines(cleanedMeds);
     } catch (error) {
       console.error("Error fetching details:", error);
@@ -135,7 +134,7 @@ export default function MedicationList() {
         </View>
 
         <DaySelector weekDays={weekDays} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
-        <MedicineList Medicines={filteredMedicines} />
+        <MedicineList Medicines={filteredMedicines} loading={loading}/>
       </View>
   );
 }

@@ -12,5 +12,4 @@ const medicines_collection_id = "67e19d6a00259e67cfe3";
 const medicines_history_id = "67f0eb870017d560cc69";
 
 
-
 export {client,account,users_collection_id,databases,database_id,medicines_collection_id,medicines_history_id};
