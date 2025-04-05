@@ -14,6 +14,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { account, databases, medicines_collection_id, database_id } from "../app/appwrite";
 import { ID } from "react-native-appwrite";
+import {
+  requestNotificationPermission,
+  scheduleMedicineAlert,
+} from '../app/notifications';
 
 export default function AddMedicationScreen() {
   const router = useRouter();
@@ -100,17 +104,55 @@ export default function AddMedicationScreen() {
         data
       );
   
-      Alert.alert("Success", "Medication Added Successfully", [
+      await requestNotificationPermission();
+
+      timings.forEach((time) => {
+        let triggerTime;
+
+        switch (time) {
+          case "morning":
+            triggerTime = getRandomTimeInRange(7, 30, 9, 0);
+            break;
+          case "afternoon":
+            triggerTime = getRandomTimeInRange(12, 0, 13, 30);
+            break;
+          case "night":
+            triggerTime = getRandomTimeInRange(20, 0, 21, 30);
+            break;
+        }
+
+        if (triggerTime) {
+          scheduleMedicineAlert(medicineName, triggerTime);
+        }
+      });
+
+      Alert.alert("Success", "Medication Added & Notifications Scheduled", [
         {
           text: "OK",
           onPress: () => router.push("(tabs)"),
         },
       ]);
-    } catch (error) {
+      } catch (error) {
       console.error("Error saving data:", error);
       Alert.alert("Error", "Failed to add medication.");
     }
   };
+  
+  function getRandomTimeInRange(startHour, startMin, endHour, endMin) {
+    const start = new Date();
+    start.setHours(startHour, startMin, 0, 0);
+  
+    const end = new Date();
+    end.setHours(endHour, endMin, 0, 0);
+  
+    const randomTimestamp = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  
+    return {
+      hour: randomTimestamp.getHours(),
+      minute: randomTimestamp.getMinutes(),
+      repeats: true,
+    };
+  }
   
 
   return (

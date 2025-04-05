@@ -1,92 +1,154 @@
-import React, { useState } from "react";
-import { View, Image, ScrollView, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Image, FlatList, StyleSheet, Text } from "react-native";
 import DaySelector from "./DaySelector";
 import MedicineList from "./MedicineList";
-
-const getWeekDays = () => {
-  const today = new Date();
-  const weekDays = [];
-  for (let i = 0; i < 7; i++) {
-    let day = new Date();
-    day.setDate(today.getDate() - today.getDay() + i);
-    weekDays.push({
-      id: i.toString(),
-      name: day.toLocaleDateString("en-US", { weekday: "short" }),
-      date: day.toLocaleDateString("en-US", { day: "2-digit", month: "short" }),
-    });
-  }
-  return weekDays;
-};
-
-const medicines = [
-  { id: "1", name: "Paracetamol", dosage: "500mg", timing: ["Morning", "Night"], startDate: "23/02/2025", endDate: "25/02/2025" },
-  { id: "2", name: "Cough Syrup", dosage: "10ml", timing: ["Afternoon"], startDate: "23/02/2025", endDate: "26/02/2025" },
-  { id: "3", name: "Eye Drops", dosage: "2 drops", timing: ["Morning","Afternoon","Night"], startDate: "23/02/2025", endDate: "28/02/2025" },
-];
-
-// Function to convert date string to a Date object
-const parseDate = (dateString) => {
-  const [day, month, year] = dateString.split("/").map(Number);
-  return new Date(year, month - 1, day);
-};
-
-// Function to get all the days between two dates
-const getMedicineDays = (startDate, endDate) => {
-  const days = [];
-  let currentDate = new Date(startDate);
-  while (currentDate <= endDate) {
-    days.push(currentDate.getDay().toString());
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  return days;
-};
-
-
-medicines.forEach((medicine) => {
-  medicine.days = getMedicineDays(parseDate(medicine.startDate), parseDate(medicine.endDate));
-});
+import { account, databases, database_id, medicines_collection_id } from "../app/appwrite";
+import { Query } from "react-native-appwrite";
 
 export default function MedicationList() {
-  const weekDays = getWeekDays();
-  const currentDayIndex = new Date().getDay();
-  const [selectedDay, setSelectedDay] = useState(weekDays[currentDayIndex].id);
+  const [medicines, setMedicines] = useState([]);
+  const [userId, setUserId] = useState();
+  const [loading, setLoading] = useState(true);
 
-  const filteredMedicines = medicines.filter((medicine) => {
+  const currentDayIndex = new Date().getDay();
+  const [selectedDay, setSelectedDay] = useState(currentDayIndex.toString());
+
+  const getWeekDays = () => {
     const today = new Date();
-    const start = parseDate(medicine.startDate);
-    const end = parseDate(medicine.endDate);
+    const weekDays = [];
   
-    const isInDateRange = today >= start && today <= end;
-    const isCorrectDay = medicine.days.includes(selectedDay);
+    for (let i = 0; i < 7; i++) {
+      let day = new Date();
+      day.setDate(today.getDate() + i); // today + next 6 days
   
-    return isInDateRange && isCorrectDay;
+      weekDays.push({
+        id: day.getDay().toString(), // still use weekday id (0-6)
+        name: day.toLocaleDateString("en-US", { weekday: "short" }),
+        date: day.toLocaleDateString("en-US", { day: "2-digit", month: "short" }),
+        fullDate: day.toISOString().split("T")[0],
+      });
+    }
+  
+    return weekDays;
+  };
+  
+
+  const weekDays = getWeekDays();
+
+  const parseDate = (dateString) => {
+    // Expected format: YYYY-MM-DD
+    const [year, month, day] = dateString.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const getMedicineDays = (startDate, endDate) => {
+    const days = [];
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      days.push(currentDate.getDay().toString());
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return days;
+  };
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await account.get();
+        setUserId(user.$id);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const fetchMedications = async () => {
+    if (!userId) return;
+  
+    try {
+      const response = await databases.listDocuments(
+        database_id,
+        medicines_collection_id,
+        [Query.equal("userId", userId)]
+      );
+  
+      const cleanedMeds = response.documents.map(({ 
+        $id,$collectionId, $createdAt, $databaseId, 
+        $permissions, $updatedAt, ...medData 
+      }) => {
+        const { start_date, end_date } = medData;
+  
+        if (start_date && end_date) {
+          const start = parseDate(start_date);
+          const end = parseDate(end_date);
+          const days = getMedicineDays(start, end);
+          return {
+            ...medData,
+            id: $id,
+            days,
+          };
+        }
+  
+        return {
+          ...medData,
+          days: [], // fallback to empty array to avoid crashing
+        };
+      });
+      console.log(cleanedMeds)
+      setMedicines(cleanedMeds);
+    } catch (error) {
+      console.error("Error fetching details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) {
+      fetchMedications(); // automatic on load
+    }
+  }, [userId]);
+
+  const selectedDateObj = parseDate(
+    weekDays.find((d) => d.id === selectedDay)?.fullDate
+  );
+  
+  const filteredMedicines = medicines.filter((medicine) => {
+    const isRightDay = medicine.days.includes(selectedDay);
+  
+    const medStart = parseDate(medicine.start_date);
+    const medEnd = parseDate(medicine.end_date);
+  
+    const isInDateRange =
+      selectedDateObj >= medStart && selectedDateObj <= medEnd;
+  
+    return isRightDay && isInDateRange;
   });
   
-
+  
   return (
-    <ScrollView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.imageContainer}>
           <Image source={require("./../assets/images/drug.png")} style={styles.image} />
         </View>
 
-        {/* Day Selector */}
         <DaySelector weekDays={weekDays} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
-
-        {/* Medicine List */}
-        <MedicineList filteredMedicines={filteredMedicines} />
+        <MedicineList Medicines={filteredMedicines} />
       </View>
-    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex:1,
     marginTop: 10,
-    alignItems: "center",
+    paddingBottom: 20,
   },
   imageContainer: {
     marginBottom: 30,
+    alignItems: "center",
   },
   image: {
     width: 140,
