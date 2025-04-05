@@ -20,10 +20,7 @@ export default function History() {
         width:120,
         height:120,
         marginLeft:20,
-      }}/>
-      <Text style={{fontSize:18,
-        marginTop:24,
-        fontWeight:'bold',}}>Your Medication is Ongoing</Text>
+      }}/>      
         <Text style={{
           fontSize:16,
           marginTop:24,
