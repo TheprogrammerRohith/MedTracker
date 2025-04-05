@@ -1,5 +1,5 @@
 import { StyleSheet, View, ActivityIndicator } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { act, useEffect, useState } from "react";
 import Header from "../../components/Header";
 import EmptyState from "../../components/EmptyState";
 import MedicationList from "../../components/MedicationList";
@@ -79,9 +79,7 @@ export default function Home() {
             activeMeds.push(med);
           }
         }
-        
-    
-        setMedications(activeMeds);
+        setMedications(activeMeds)
       } catch (error) {
         console.error("Error fetching medications:", error);
       } finally {
@@ -116,14 +114,13 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <Header userName={userName} />
-
       {loading ? (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#00B5E2" />
         </View>
       ) : (
         medications.length > 0 ? <MedicationList /> : <EmptyState />
-      )}
+      )}      
     </View>
   );
 }

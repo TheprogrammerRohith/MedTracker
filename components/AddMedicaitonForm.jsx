@@ -77,6 +77,36 @@ export default function AddMedicationScreen() {
     setShowEndPicker(false);
   };
 
+  function getRandomTimeInRange(startHour, startMin, endHour, endMin) {
+    const start = new Date();
+    start.setHours(startHour, startMin, 0, 0);
+  
+    const end = new Date();
+    end.setHours(endHour, endMin, 0, 0);
+  
+    const randomTimestamp = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+  
+    return {
+      hour: randomTimestamp.getHours(),
+      minute: randomTimestamp.getMinutes(),
+      repeats: true,
+    };
+  }
+
+  const getDatesBetween = (start, end) => {
+    const dates = [];
+    const current = new Date(start);
+    const endDate = new Date(end);
+  
+    while (current <= endDate) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+  
+    return dates;
+  };
+
+  
   const handleSubmit = async () => {
     const timings = Object.keys(selectedTimes).filter((key) => selectedTimes[key]);
   
@@ -106,25 +136,35 @@ export default function AddMedicationScreen() {
   
       await requestNotificationPermission();
 
-      timings.forEach((time) => {
-        let triggerTime;
+      const dateList = getDatesBetween(startDate, endDate);
 
-        switch (time) {
-          case "morning":
-            triggerTime = getRandomTimeInRange(7, 30, 9, 0);
-            break;
-          case "afternoon":
-            triggerTime = getRandomTimeInRange(12, 0, 13, 30);
-            break;
-          case "night":
-            triggerTime = getRandomTimeInRange(20, 0, 21, 30);
-            break;
-        }
+      dateList.forEach((date) => {
+        timings.forEach((time) => {
+          let timeConfig;
 
-        if (triggerTime) {
-          scheduleMedicineAlert(medicineName, triggerTime);
-        }
+          switch (time) {
+            case "morning":
+              timeConfig = getRandomTimeInRange(7, 30, 9, 0);
+              break;
+            case "afternoon":
+              timeConfig = getRandomTimeInRange(12, 0, 13, 30);
+              break;
+            case "night":
+              timeConfig = getRandomTimeInRange(20, 0, 21, 30);
+              break;
+          }
+
+          if (timeConfig) {
+            const triggerDate = new Date(date);
+            triggerDate.setHours(timeConfig.hour);
+            triggerDate.setMinutes(timeConfig.minute);
+            triggerDate.setSeconds(0);
+
+            scheduleMedicineAlert(medicineName, triggerDate);
+          }
+        });
       });
+
 
       Alert.alert("Success", "Medication Added & Notifications Scheduled", [
         {
@@ -138,21 +178,7 @@ export default function AddMedicationScreen() {
     }
   };
   
-  function getRandomTimeInRange(startHour, startMin, endHour, endMin) {
-    const start = new Date();
-    start.setHours(startHour, startMin, 0, 0);
   
-    const end = new Date();
-    end.setHours(endHour, endMin, 0, 0);
-  
-    const randomTimestamp = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-  
-    return {
-      hour: randomTimestamp.getHours(),
-      minute: randomTimestamp.getMinutes(),
-      repeats: true,
-    };
-  }
   
 
   return (

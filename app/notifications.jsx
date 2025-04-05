@@ -24,13 +24,21 @@ export async function requestNotificationPermission() {
   }
 }
 
-export async function scheduleMedicineAlert(medName, dateTime) {
+export async function scheduleMedicineAlert(medName, triggerDate) {
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Medicine Reminder 💊',
+      title: "Medicine Reminder",
       body: `Time to take your medicine: ${medName}`,
+      data: {
+        medicineName, // Add more if needed
+      },
       sound: true,
     },
-    trigger: dateTime, // ex: { hour: 9, minute: 0, repeats: true } or Date
+    trigger: {
+      type: 'timestamp',
+      timestamp: triggerDate.getTime(),
+    },
   });
 }
+
+
