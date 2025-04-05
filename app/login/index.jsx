@@ -12,7 +12,6 @@ export default function LandingScreen() {
     const checkLogin = async () => {
       try {
         const user = await account.get(); // Check current session
-        console.log("User is signed in:", user.name);
         setIsLoggedIn(true);
         router.replace("(tabs)"); // Redirect if logged in
       } catch (error) {

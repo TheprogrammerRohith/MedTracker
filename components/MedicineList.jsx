@@ -1,66 +1,93 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, ScrollView } from "react-native";
+import { View, Text, Image, StyleSheet, FlatList } from "react-native";
 
-export default function MedicineList({ filteredMedicines }) {
+export default function MedicineList({ Medicines }) {
   return (
-    <ScrollView style={{ width: "100%", marginTop: 20 }}
-    contentContainerStyle={{ paddingBottom: 80 }}>
-      {filteredMedicines.length > 0 ? (
-        filteredMedicines.map((item) => {
-          const { timeText, timeImage } = getTimeDetails(item.timing);
-
-          return (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.rowContainer}>
-                {/* Medicine Details */}
-                <View style={styles.detailsContainer}>
-                  <Text style={styles.medicineName}>{item.name}</Text>
-                  <Text style={styles.detailText}>Dosage: {item.dosage}</Text>
-                  <Text style={styles.detailText}>Timing:</Text>
-                  <View style={{ flexDirection: "row", gap: 10 }}>
-                    {item.timing.includes("Morning") && (
-                      <Image source={require("./../assets/images/morning_icon.png")} style={styles.image} />
-                    )}
-                    {item.timing.includes("Afternoon") && (
-                      <Image source={require("./../assets/images/afternoon.png")} style={styles.image} />
-                    )}
-                    {item.timing.includes("Night") && (
-                      <Image source={require("./../assets/images/cloudy-night.png")} style={styles.image} />
-                    )}
-                  </View>
-                </View>
-
-                {/* Time Image with Text Based on Current Time */}
-                {timeImage && (
-                  <View style={styles.timeContainer}>
-                    <Image source={timeImage} style={styles.timeImage} />
-                    <Text style={styles.timeText}>{timeText}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          );
-        })
-      ) : (
+    <FlatList
+      style={{flex:1,width:"100%",marginTop:-400}}
+      contentContainerStyle={{paddingBottom: 80 }}
+      data={Medicines}
+      keyExtractor={(item) => item.id}
+      onLayout={(event) => {
+        const {x, y, width, height} = event.nativeEvent.layout;
+        console.log('Debug element layout:', event.nativeEvent.layout);
+        console.log('FlatList layout:', {x, y, width, height});
+      }}
+      ListEmptyComponent={
         <Text style={styles.noMedsText}>No medicines for this day</Text>
-      )}
-    </ScrollView>
-  );
+      }
+      renderItem={({ item }) => {
+        const { timeText, timeImage } = getTimeDetails(item.timings);
+
+        return (
+          <View style={styles.card}>
+            <View style={styles.rowContainer}>
+              {/* Medicine Details */}
+              <View style={styles.detailsContainer}>
+              <Text style={styles.diseaseName}>{item.disease_name}</Text>
+                <Text style={styles.medicineName}>{item.medicine_name}</Text>
+                <Text style={styles.detailText}>Dosage: {item.medicine_dosage}</Text>
+                <Text style={styles.detailText}>Timing:</Text>
+                <View style={{ flexDirection: "row", gap: 15 }}>
+                  {item.timings.includes("morning") && (
+                    <View style={styles.iconLabel}>
+                      <Image
+                        source={require("./../assets/images/morning_icon.png")}
+                        style={styles.image}
+                      />
+                      <Text style={styles.label}>Morning</Text>
+                    </View>
+                  )}
+                  {item.timings.includes("afternoon") && (
+                    <View style={styles.iconLabel}>
+                      <Image
+                        source={require("./../assets/images/afternoon.png")}
+                        style={styles.image}
+                      />
+                      <Text style={styles.label}>Afternoon</Text>
+                    </View>
+                  )}
+                  {item.timings.includes("night") && (
+                    <View style={styles.iconLabel}>
+                      <Image
+                        source={require("./../assets/images/cloudy-night.png")}
+                        style={styles.image}
+                      />
+                      <Text style={styles.label}>Night</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Time Image with Text Based on Current Time */}
+              {timeImage && (
+                <View style={styles.timeContainer}>
+                  <Image source={timeImage} style={styles.timeImage} />
+                  <Text style={styles.timeText}>{timeText}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      }}
+    />
+  )
+    
 }
 
 // Function to determine the time text and image based on the current time
-const getTimeDetails = (timing) => {
+const getTimeDetails = (timings) => {
   const currentHour = new Date().getHours();
   let timeText = "";
   let timeImage = null;
 
-  if (timing.includes("Morning") && currentHour >= 6 && currentHour < 12) {
+  if (timings.includes("morning") && currentHour >= 6 && currentHour < 12) {
     timeText = "8 to 9 AM";
     timeImage = require("./../assets/images/time.png");
-  } else if (timing.includes("Afternoon") && currentHour >= 12 && currentHour < 18) {
+  } else if (timings.includes("afternoon") && currentHour >= 12 && currentHour < 18) {
     timeText = "1 to 2 PM";
     timeImage = require("./../assets/images/time.png");
-  } else if (timing.includes("Night") && (currentHour >= 18 || currentHour < 23)) {
+  } else if (timings.includes("night") && (currentHour >= 18 || currentHour < 23)) {
     timeText = "8 to 9 PM";
     timeImage = require("./../assets/images/time.png");
   }
@@ -91,8 +118,14 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flex: 1, // Takes available space
   },
-  medicineName: {
+  diseaseName: {
     fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  medicineName: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 5,
@@ -127,4 +160,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
+  iconLabel: {
+    alignItems: "center",
+  },
+  label: {
+    fontSize: 12,
+    marginTop: 4,
+    color: "#444",
+  }
 });

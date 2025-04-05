@@ -7,6 +7,11 @@ export default function DaySelector({ weekDays, selectedDay, setSelectedDay }) {
       data={weekDays}
       horizontal
       showsHorizontalScrollIndicator={false}
+      onLayout={(event) => {
+        const {x, y, width, height} = event.nativeEvent.layout;
+        console.log('Debug element layout:', event.nativeEvent.layout);
+        console.log('day selector FlatList layout:', {x, y, width, height});
+      }}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.listContainer}
       renderItem={({ item }) => (
