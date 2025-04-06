@@ -1,18 +1,22 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity, Alert,TextInput, Button, ScrollView } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { account, databases, database_id, users_collection_id } from "../appwrite";
+import { account, databases, database_id, users_collection_id,medicines_collection_id } from "../appwrite";
 import { Query } from "react-native-appwrite";
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Profile() {
   const router = useRouter();
   const [userData, setUserData] = useState(null);
+  const [userId,setUserId] = useState();
   const [docId,setDocId] = useState();
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showMedications, setShowMedications] = useState(false);
   const [contactName, setContactName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [medicines, setMedicines] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
 
 
   useEffect(() => {
@@ -20,8 +24,8 @@ export default function Profile() {
       try {
         // Fetch logged-in user session
         const userSession = await account.get();
-        const userId = userSession.$id; // Get userId
-        // Query Appwrite database to get user details
+        const userId = userSession.$id;
+        setUserId(userId);
         const response = await databases.listDocuments(database_id, users_collection_id, [
           Query.equal("userId", userId)
         ]);
@@ -39,6 +43,42 @@ export default function Profile() {
 
     fetchUserDetails();
   }, []);
+  useEffect(() => {
+    if (userData) {
+      setContactName(userData.contact_person_name || '');
+      setRelationship(userData.contact_relation || '');
+      setContactPhone(userData.contact_phoneNumber || '');
+    }
+  }, [userData]);
+
+  const fetchMedications = async () => {
+    if (!userId) return;
+  
+    try {
+      const response = await databases.listDocuments(
+        database_id,
+        medicines_collection_id,
+        [Query.equal("userId", userId)]
+      );
+  
+      const cleanedMeds = response.documents.map(
+        ({$collectionId, $createdAt, $databaseId, $permissions, $updatedAt, ...medData }) => medData
+      );
+      setMedicines(cleanedMeds);
+    } catch (error) {
+      console.error("Error fetching details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  useEffect(() => {
+    if (userId) {
+      fetchMedications(); // automatic on load
+    }
+  }, [userId]);
+
 
   const handleLogout = async () => {
     try {
@@ -71,6 +111,15 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteMedication = async (medId) => {
+    try {
+      await databases.deleteDocument(database_id, medicines_collection_id, medId);
+      // Refresh medications list
+      setMedicines(prev => prev.filter(med => med.$id !== medId));
+    } catch (error) {
+      console.error("Error deleting medication:", error);
+    }
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -91,7 +140,7 @@ export default function Profile() {
           <Text style={styles.menuText}>Profile</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => setShowMedications(!showMedications)}>
           <Text style={styles.menuText}>View Medications</Text>
         </TouchableOpacity>
 
@@ -100,23 +149,30 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
       {showContactForm && (
-      <View style={styles.contactFormContainer}>
+        <View style={styles.contactFormContainer}>
         <TouchableOpacity onPress={() => setShowContactForm(false)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
-
-        <Text style={styles.sectionTitle}>Contact Details</Text>
-
+      
+        <View style={styles.headerRow}>
+          <Text style={styles.sectionTitle}>Contact Details</Text>
+          <TouchableOpacity onPress={() => setIsEditing(prev => !prev)}>
+            <Ionicons name={isEditing ? "close" : "create-outline"} size={22} color="#007BFF" />
+          </TouchableOpacity>
+        </View>
+      
         <TextInput
           placeholder="Name of contact person"
           style={styles.input}
           value={contactName}
+          editable={isEditing}
           onChangeText={setContactName}
         />
         <TextInput
           placeholder="Relationship"
           style={styles.input}
           value={relationship}
+          editable={isEditing}
           onChangeText={setRelationship}
         />
         <TextInput
@@ -124,14 +180,47 @@ export default function Profile() {
           keyboardType="phone-pad"
           style={styles.input}
           value={contactPhone}
+          editable={isEditing}
           onChangeText={setContactPhone}
         />
-        <Button
-          title="Save Contact Details"
-          onPress={handleSubmit}
-        />
+      
+        {isEditing && (
+          <Button
+            title="Save Contact Details"
+            onPress={handleSubmit}
+          />
+        )}
       </View>
     )}
+    {showMedications && (
+      <View style={styles.medicationList}>
+        <TouchableOpacity onPress={() => setShowMedications(false)} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        {medicines.length === 0 ? (
+          <Text style={styles.emptyText}>No medications added yet.</Text>
+        ) : (
+          medicines.map((med, index) => (
+            <View key={index} style={styles.medCard}>
+              <Text style={styles.diseaseName}>{med.disease_name}</Text>
+              <Text style={styles.medName}>{med.medicine_name}</Text>
+              <Text>{med.medicine_type} - {med.medicine_dosage}</Text>
+              <Text>Start: {med.start_date} | End: {med.end_date}</Text>
+              <Text>Timings: {med.timings.join(", ")}</Text>
+                <View style={styles.cardButtons}>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeleteMedication(med.$id)}
+                  >
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+    )}
+
 
     </View>
     </ScrollView>
@@ -217,6 +306,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#333",
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  
   input: {
     backgroundColor: "white",
     borderRadius: 8,
@@ -226,5 +322,57 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
   },
+  medicationList: {
+    width: "90%",
+    backgroundColor: "#f0f0f0",
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  medCard: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  diseaseName: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  medName: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  emptyText: {
+    fontStyle: "italic",
+    color: "#888",
+  },
+  cardButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 10,
+  },
+  editButton: {
+    backgroundColor: "#00b5e2",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  deleteButton: {
+    backgroundColor: "#e74c3c",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  
   
 });
