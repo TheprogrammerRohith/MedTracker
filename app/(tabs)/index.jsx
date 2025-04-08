@@ -1,4 +1,4 @@
-import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ActivityIndicator,Text, Modal, Button, Alert } from "react-native";
 import React, { act, useEffect, useState } from "react";
 import Header from "../../components/Header";
 import EmptyState from "../../components/EmptyState";
@@ -6,6 +6,8 @@ import MedicationList from "../../components/MedicationList";
 import { account, database_id, databases, medicines_collection_id,users_collection_id,medicines_history_id } from "../../app/appwrite";
 import { Query,ID } from "react-native-appwrite";
 import { useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function Home() {
   const [userId, setUserId] = useState(null);
@@ -13,6 +15,34 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [userName,setUserName] = useState(null);
   const router = useRouter();
+  const { medicineName } = useLocalSearchParams();
+  const [visible, setVisible] = useState(!!medicineName);
+
+  useEffect(() => {
+    if (medicineName) setVisible(true);
+  }, [medicineName]);
+
+  const handleConfirm = async () => {
+    if(medicineName){
+      const key = `confirmed_${medicineName}_${new Date().toISOString().split('T')[0]}`;
+      await AsyncStorage.setItem(key, 'true');
+      Alert.alert("✅ Confirmed", `You marked "${medicineName}" as taken today.`);
+      setVisible(false);
+
+      fetchConfirmationStatus(key);
+    }
+    
+  };
+
+  const fetchConfirmationStatus = async (key) => {
+    try {
+      const value = await AsyncStorage.getItem(key);
+      console.log(`📦 Fetched confirmation status for ${key}:`, value); // should log 'true'
+    } catch (error) {
+      console.error("❌ Error fetching confirmation status:", error);
+    }
+  };
+
 
   // Fetch user ID first
   useEffect(() => {
@@ -121,7 +151,24 @@ export default function Home() {
       ) : (
         medications.length > 0 ? <MedicationList /> : <EmptyState />
       )}      
+
+      <Modal visible={visible} transparent animationType="slide">
+        <View style={{ flex: 1, backgroundColor: '#00000088', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 12, width: '80%' }}>
+            <Text style={{ fontSize: 18 }}>Did you take your medicine?</Text>
+            <Text style={{ fontSize: 22, marginVertical: 10 }}>{medicineName}</Text>
+            <View style={{ marginTop: 15 }}>
+              <View style={{ marginBottom: 10 }}>
+                <Button title="✅ Yes, I took it" onPress={handleConfirm} />
+              </View>
+              <Button title="Dismiss" color="grey" onPress={() => setVisible(false)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
+    
   );
 }
 

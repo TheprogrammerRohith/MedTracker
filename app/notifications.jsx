@@ -1,5 +1,3 @@
-// utils/notifications.js
-
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -25,12 +23,15 @@ export async function requestNotificationPermission() {
 }
 
 export async function scheduleMedicineAlert(medName, triggerDate) {
+  console.log("📅 Scheduling notification for", medName, "at:", triggerDate);
+  console.log("⏱ Timestamp (ms):", triggerDate.getTime(), "Current time:", Date.now());
+
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Medicine Reminder",
       body: `Time to take your medicine: ${medName}`,
       data: {
-        medicineName, // Add more if needed
+        medicineName: medName, // ✅ Ensure the value is explicitly passed
       },
       sound: true,
     },
@@ -39,6 +40,11 @@ export async function scheduleMedicineAlert(medName, triggerDate) {
       timestamp: triggerDate.getTime(),
     },
   });
+
+  console.log("✅ Notification scheduled successfully");
 }
+
+
+
 
 
