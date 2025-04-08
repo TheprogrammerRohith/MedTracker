@@ -140,32 +140,37 @@ export default function AddMedicationScreen() {
 
       dateList.forEach((date) => {
         timings.forEach((time) => {
-          let timeConfig;
-
+          let hour, minute;
+      
           switch (time) {
             case "morning":
-              timeConfig = getRandomTimeInRange(7, 30, 9, 0);
+              hour = 8;
+              minute = 0;
               break;
             case "afternoon":
-              timeConfig = getRandomTimeInRange(12, 0, 13, 30);
+              hour = 13;
+              minute = 0;
               break;
             case "night":
-              timeConfig = getRandomTimeInRange(20, 0, 21, 30);
+              hour = 23;
+              minute = 24;
               break;
           }
-
-          if (timeConfig) {
+      
+          if (hour !== undefined && minute !== undefined) {
             const triggerDate = new Date(date);
-            triggerDate.setHours(timeConfig.hour);
-            triggerDate.setMinutes(timeConfig.minute);
+            triggerDate.setHours(hour);
+            triggerDate.setMinutes(minute);
             triggerDate.setSeconds(0);
-
+      
+            // For debugging: log it
+            console.log(`Scheduling ${medicineName} at ${triggerDate.toString()}`);
+      
             scheduleMedicineAlert(medicineName, triggerDate);
           }
         });
       });
-
-
+      
       Alert.alert("Success", "Medication Added & Notifications Scheduled", [
         {
           text: "OK",

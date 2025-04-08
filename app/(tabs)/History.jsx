@@ -37,7 +37,6 @@ export default function History() {
         }) => medData);
   
         setMedications(cleanedMeds);
-        console.log("Cleaned Medications:", cleanedMeds);
       } catch (error) {
         console.error("Error fetching details:", error);
       } finally {
