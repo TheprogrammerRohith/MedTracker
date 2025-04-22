@@ -174,7 +174,6 @@ export default function AddMedicationScreen() {
       Alert.alert("Success", "Medication Added & Notifications Scheduled", [
         {
           text: "OK",
-          onPress: () => router.push("(tabs)"),
         },
       ]);
       } catch (error) {

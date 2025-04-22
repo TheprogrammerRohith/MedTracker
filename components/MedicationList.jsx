@@ -110,6 +110,10 @@ export default function MedicationList() {
     }
   }, [userId]);
 
+  const refreshMedicines = () => {
+    fetchMedications();
+  };
+
   const selectedDateObj = parseDate(
     weekDays.find((d) => d.id === selectedDay)?.fullDate
   );
@@ -134,7 +138,7 @@ export default function MedicationList() {
         </View>
 
         <DaySelector weekDays={weekDays} selectedDay={selectedDay} setSelectedDay={setSelectedDay} />
-        <MedicineList Medicines={filteredMedicines} loading={loading}/>
+        <MedicineList Medicines={filteredMedicines} refreshMedicines={refreshMedicines} loading={loading}/>
       </View>
   );
 }
