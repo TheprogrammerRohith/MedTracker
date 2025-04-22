@@ -1,26 +1,45 @@
-import { StyleSheet, View, ActivityIndicator,Text, Modal, Button, Alert } from "react-native";
-import React, { act, useEffect, useState } from "react";
+import { StyleSheet, View, ActivityIndicator,Text, Modal, Button, Alert,TouchableOpacity } from "react-native";
+import React, { act, useCallback, useEffect, useState } from "react";
 import Header from "../../components/Header";
 import EmptyState from "../../components/EmptyState";
 import MedicationList from "../../components/MedicationList";
 import { account, database_id, databases, medicines_collection_id,users_collection_id,medicines_history_id } from "../../app/appwrite";
-import { Query,ID } from "react-native-appwrite";
+import { Query,ID, Messaging,Functions } from "react-native-appwrite";
 import { useRouter } from "expo-router";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { getMedicineName,clearMedicineName } from '../setMedicineName'
+import ChatBotModal from "../../components/ChatBotModal";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
   const [userId, setUserId] = useState(null);
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userName,setUserName] = useState(null);
+  const [contactName,setContactName] = useState(null)
+  const [contactPhoneNumber,setContactPhoneNumber] = useState(null)
   const router = useRouter();
-  const { medicineName } = useLocalSearchParams();
-  const [visible, setVisible] = useState(!!medicineName);
-
+  const [medicineName,setMedicineName] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [chatVisible, setChatVisible] = useState(false);
+  
   useEffect(() => {
-    if (medicineName) setVisible(true);
-  }, [medicineName]);
+    const checkAndShowDialog = async () => {
+      const flag = await AsyncStorage.getItem("showConfirmationDialog");
+      const medName = await getMedicineName();
+  
+      if (flag === "true" && medName) {
+        setMedicineName(medName);   // show name on modal
+        setVisible(true);           // show modal
+        await AsyncStorage.removeItem("showConfirmationDialog"); // clear flag
+        await clearMedicineName(); // optional: clear name after use
+      }
+    };
+  
+    checkAndShowDialog();
+  }, []);
+  
+  
 
   const handleConfirm = async () => {
     if(medicineName){
@@ -37,12 +56,45 @@ export default function Home() {
   const fetchConfirmationStatus = async (key) => {
     try {
       const value = await AsyncStorage.getItem(key);
-      console.log(`📦 Fetched confirmation status for ${key}:`, value); // should log 'true'
+      console.log(`Fetched confirmation status for ${key}:`, value);
+  
+      if (value === 'true') {
+        if (!contactPhoneNumber) {
+          Alert.alert("No Contact Found", "Please fill in contact details in your profile.");
+          return;
+        }
+        const formattedPhone = `+91${contactPhoneNumber}`;
+        console.log(formattedPhone)
+        const date = key.split("_").pop(); // Extract date from key
+        const messagePayload = {
+          contact_name: contactName,
+          contact_phone: formattedPhone,
+          medicine_name: medicineName,
+          user_name: userName,
+          date: date,
+        };
+  
+        // 🔥 POST to your local Express server
+        const response = await fetch("http://192.168.242.252:4000/sms-webhook", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ payload: messagePayload })
+        });
+  
+        if (!response.ok) {
+          throw new Error(`SMS webhook failed: ${response.status}`);
+        }
+  
+        console.log("✅ SMS webhook triggered successfully.");
+      }
     } catch (error) {
-      console.error("❌ Error fetching confirmation status:", error);
+      console.error("❌ Error in confirmation check or SMS send:", error);
     }
   };
-
+  
+  
 
   // Fetch user ID first
   useEffect(() => {
@@ -120,7 +172,7 @@ export default function Home() {
   }, [userId]); // Run when userId is updated
 
   useEffect(() => {
-    const fetchUserName = async () => {
+    const fetchUserDetails = async () => {
       if (!userId) return; // Wait until userId is set
 
       try {
@@ -130,6 +182,8 @@ export default function Home() {
           [Query.equal("userId", userId)]
         );
         setUserName(response.documents[0].name)
+        setContactName(response.documents[0].contact_person_name)
+        setContactPhoneNumber(response.documents[0].contact_phoneNumber)
       } catch (error) {
         console.error("Error fetching details:", error);
       } finally {
@@ -137,7 +191,7 @@ export default function Home() {
       }
     };
 
-    fetchUserName();
+    fetchUserDetails();
   }, [userId]);
   
   
@@ -167,6 +221,17 @@ export default function Home() {
         </View>
       </Modal>
 
+      {/* Floating Chat Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setChatVisible(true)}
+      >
+        <Ionicons name="chatbubble-ellipses" size={28} color="white" />
+      </TouchableOpacity>
+
+      {/* Chat Modal */}
+      <ChatBotModal visible={chatVisible} onClose={() => setChatVisible(false)} />
+
     </View>
     
   );
@@ -182,4 +247,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  fab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 25,
+    backgroundColor: '#3e8ef7',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+  
 });

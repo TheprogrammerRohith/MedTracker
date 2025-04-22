@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
+import { setMedicineName } from './setMedicineName';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -12,34 +14,42 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   const router = useRouter();
-  
+
   useEffect(() => {
     const checkInitialNotification = async () => {
       const response = await Notifications.getLastNotificationResponseAsync();
       const data = response?.notification?.request?.content?.data;
-  
+
       if (data?.medicineName) {
-        router.push({
-          pathname: '/(tabs)',
-          params: { medicineName: data.medicineName }
-        });
+        await setMedicineName(data.medicineName);
+        await AsyncStorage.setItem("showConfirmationDialog", "true"); // 👈 Flag set
+        
       }
     };
-  
+
     checkInitialNotification();
-  
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data;
-  
+
+    const receiveSub = Notifications.addNotificationReceivedListener(async (notification) => {
+      const data = notification.request.content.data;
       if (data?.medicineName) {
-        router.push({
-          pathname: '/(tabs)',
-          params: { medicineName: data.medicineName }
-        });
+        await setMedicineName(data.medicineName); // Only stores name
+        // ❌ Do not set dialog flag here
       }
     });
-  
-    return () => subscription.remove();
+
+    const responseSub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const data = response.notification.request.content.data;
+      if (data?.medicineName) {
+        await setMedicineName(data.medicineName); // optional: save again
+        await AsyncStorage.setItem("showConfirmationDialog", "true"); // set flag
+        router.push('/(tabs)');
+      }
+    });
+
+    return () => {
+      receiveSub.remove();
+      responseSub.remove();
+    };
   }, []);
 
   return (

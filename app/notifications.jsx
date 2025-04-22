@@ -23,15 +23,15 @@ export async function requestNotificationPermission() {
 }
 
 export async function scheduleMedicineAlert(medName, triggerDate) {
-  console.log("📅 Scheduling notification for", medName, "at:", triggerDate);
-  console.log("⏱ Timestamp (ms):", triggerDate.getTime(), "Current time:", Date.now());
+  console.log("Scheduling notification for", medName, "at:", triggerDate);
+  console.log("Timestamp (ms):", triggerDate.getTime(), "Current time:", Date.now());
 
   await Notifications.scheduleNotificationAsync({
     content: {
       title: "Medicine Reminder",
       body: `Time to take your medicine: ${medName}`,
       data: {
-        medicineName: medName, // ✅ Ensure the value is explicitly passed
+        medicineName: medName, 
       },
       sound: true,
     },
@@ -41,7 +41,7 @@ export async function scheduleMedicineAlert(medName, triggerDate) {
     },
   });
 
-  console.log("✅ Notification scheduled successfully");
+  console.log("Notification scheduled successfully");
 }
 
 
