@@ -15,8 +15,8 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    ```bash
     npx expo start
    ```
-![WhatsApp Image 2025-04-29 at 11 57 55_9fa4222a](https://github.com/user-attachments/assets/84ff5257-d381-4e57-89be-201eaba0471a)
-![WhatsApp Image 2025-04-29 at 11 57 55_77006b38](https://github.com/user-attachments/assets/6fb870a0-d34c-4763-892e-3856c1c3e737)
-![WhatsApp Image 2025-04-29 at 11 57 55_e4921da4](https://github.com/user-attachments/assets/e66b5a46-5a7a-4328-b9d4-bf4ffbcb1ec3)
-![WhatsApp Image 2025-04-29 at 11 57 55_fc2075a4](https://github.com/user-attachments/assets/52cf327e-6425-48cf-b77a-1b5d143a5826)
+![image4](https://github.com/user-attachments/assets/3b148205-d67f-4e35-b34d-07cf6a078674)
+![image 1](https://github.com/user-attachments/assets/0742d235-5f99-40b5-9a87-20d47ec42c2c)
+![image2](https://github.com/user-attachments/assets/c99eef65-355e-4cf8-98da-54d7ece5b15d)
+![image3](https://github.com/user-attachments/assets/4b56351b-e7fd-4003-8f75-f778c971d2df)
 
