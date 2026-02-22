@@ -41,8 +41,11 @@ Timings
 
 Tech Stack
 Frontend
+
 React Native (Expo)
-TypeScript / JavaScript
+
+JavaScript
+
 expo-notifications
 
 Backend
