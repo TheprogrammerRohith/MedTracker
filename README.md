@@ -28,7 +28,7 @@ Users can add caretaker details
 Sends updates about medicine confirmation status
 Improves accountability and safety
 
-🗂 5. Organized Medicine History
+5. Organized Medicine History
 Stores:
 Current medications
 Past medications
