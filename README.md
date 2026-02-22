@@ -1,81 +1,117 @@
-# MedTracker – Medicine Tracking App
+# 💊 MedTracker -- Smart Medicine Tracking App
 
-MedTracker is a React Native-based medicine tracking application that helps users manage their medications efficiently. The app provides intelligent reminders, tracks medicine duration, and improves adherence through notifications and caretaker alerts.
-# Features
-1. Medicine Management
+MedTracker is a React Native-based medicine tracking application that
+helps users manage their medications efficiently.\
+The app provides intelligent reminders, tracks medicine duration, and
+improves adherence through notifications and caretaker alerts.
 
-Add, edit, and delete medicines
+------------------------------------------------------------------------
 
-Track:
+## 🚀 Features
 
-Disease name
+### ✅ 1. Medicine Management
 
-Medicine name
+-   Add, edit, and delete medicines
+-   Track:
+    -   Disease name
+    -   Medicine name
+    -   Dosage
+    -   Medicine type (Tablet, Syrup, etc.)
+    -   Start date & End date
+    -   Timings (Morning / Afternoon / Night)
 
-Dosage
+### 🔔 2. Smart Notifications
 
-Medicine type (Tablet, Syrup, etc.)
+-   Local push notifications using `expo-notifications`
+-   Scheduled from `start_date` to `end_date`
+-   Triggered based on selected time slots
+-   Alerts users at the correct dosage times
 
-Start date & End date
+### 📊 3. Duration Monitoring
 
-Timings (Morning / Afternoon / Night)
+-   Tracks long-term medicine usage
+-   Warns users if medication duration exceeds typical limits
+-   Encourages safe usage awareness
 
-2. Smart Notifications
+### 👨‍👩‍👧 4. Caretaker Notification System
 
-Local push notifications using expo-notifications
+-   Users can add caretaker details
+-   Sends updates about medicine confirmation status
+-   Improves accountability and safety
 
-Scheduled from start_date to end_date
+### 🗂 5. Organized Medicine History
 
-Triggered based on selected time slots
+Stores: - Current medications - Past medications
 
-Alerts users at the correct dosage times
+Each medicine entry includes: - Disease name - Dosage - Type -
+Duration - Timings - User ID
 
-3. Duration Monitoring
+------------------------------------------------------------------------
 
-Tracks long-term medicine usage
+## 🛠 Tech Stack
 
-Warns users if medication duration exceeds typical limits
+### 📱 Frontend
 
-Encourages safe usage awareness
+-   React Native (Expo)
+-   JavaScript 
+-   `expo-notifications`
 
-4. Caretaker Notification System
+### ☁ Backend
 
-Users can add caretaker details
+-   Appwrite (Database & Authentication)
 
-Sends updates about medicine confirmation status
+------------------------------------------------------------------------
 
-Improves accountability and safety
+## 🧠 Application Flow
 
-5. Organized Medicine History
+1.  User adds a new medicine.
+2.  Notification is scheduled based on:
+    -   Selected time (Morning/Afternoon/Night)
+    -   Start and End date.
+3.  User receives reminder.
+4.  User confirms medicine intake.
+5.  Status is recorded in the system.
+6.  (Optional) Caretaker is notified.
 
-Stores:
+## ⚙ Installation & Setup
 
-Current medications
+### 1️⃣ Clone Repository
 
-Past medications
+``` bash
+git clone https://github.com/your-username/medtracker.git
+cd medtracker
+```
 
-Tracks:
+### 2️⃣ Install Dependencies
 
-Disease name
+``` bash
+npm install
+```
 
-Dosage
+### 3️⃣ Start Expo
 
-Type
+``` bash
+npx expo start
+```
 
-Duration
+------------------------------------------------------------------------
 
-Timings
-Tech Stack
-Frontend
+## 📸 Screens Overview
 
-React Native (Expo)
+-   🏠 Home Screen -- Displays active medicines and upcoming reminders.
+-   ➕ Add Medicine Screen -- Input medicine details and schedule
+    reminders.
+-   📜 History Screen -- View past medication records.
+-   👤 Profile Screen -- Manage user and caretaker details.
 
-JavaScript
+------------------------------------------------------------------------
 
-expo-notifications
+## 🎯 Future Enhancements
 
-Backend
+-   AI-based health insights
+-   IoT-based smart pill box integration
+-   Cloud push notifications
+-   Medicine adherence analytics dashboard
+-   Multi-device sync support
 
-Appwrite (Database & Authentication)
-
-
+------------------------------------------------------------------------
